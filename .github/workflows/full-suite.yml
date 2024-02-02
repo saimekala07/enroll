@@ -53,13 +53,19 @@ jobs:
       - name: Checkout repository in view_linter
         uses: actions/checkout@v2
 
+      - name: Debug Information
+        run: |
+          echo "Current directory: $(pwd)"
+          echo "Ruby version: $(ruby --version)"
+          echo "Gem version: $(gem --version)"
+          echo "Bundler version: $(bundle --version)"
+
       - name: Set working directory and run View Linter
         run: |
           cd ${{ github.workspace }}
           pwd
           git status
           git fetch --no-tags --depth=1 origin trunk
-          export PATH=$PATH:$GITHUB_WORKSPACE/vendor/bundle/ruby/2.6.0/bin  # Add bundle executable to the PATH
           bundle exec rake view_translations_linter:lint_git_difference_changed_lines
         shell: bash
 #
