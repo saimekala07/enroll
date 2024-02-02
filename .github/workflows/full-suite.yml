@@ -50,9 +50,6 @@ jobs:
     needs: common-setup
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository in view_linter
-        uses: actions/checkout@v2
-
       - name: Debug Information
         run: |
           echo "Current directory: $(pwd)"
