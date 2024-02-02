@@ -42,7 +42,7 @@ jobs:
             vendor/bundle
           key: v1-${{ runner.os }}-${{ hashFiles('**/Gemfile.lock') }}
           restore-keys: |
-            v1-${{ runner.os }}-
+            v1-${{ runner.os }}-${{ hashFiles('**/Gemfile.lock') }}
 
 
   # Job to lint views
@@ -52,11 +52,17 @@ jobs:
     steps:
       - name: Checkout repository in view_linter
         uses: actions/checkout@v2
+        with:
+          persist-credentials: false
 
       - name: Debug Information in view_linter
         run: |
           pwd
           ls -R
+
+      - name: Cache Information
+        run: |
+          echo "Cache key: v1-${{ runner.os }}-${{ hashFiles('**/Gemfile.lock') }}"
 
       - name: Debug Cache Information
         run: |
