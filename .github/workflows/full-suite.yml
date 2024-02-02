@@ -53,6 +53,11 @@ jobs:
       - name: Checkout repository in view_linter
         uses: actions/checkout@v2
 
+      - name: Debug Information in view_linter
+        run: |
+          pwd
+          ls -R
+
       - name: Debug Cache Information
         run: |
           echo "Cache key: v1-${{ runner.os }}-${{ hashFiles('**/Gemfile.lock') }}"
