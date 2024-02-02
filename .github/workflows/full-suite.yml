@@ -1,4 +1,5 @@
 name: full check suite
+
 on:
   push:
   schedule:
@@ -12,355 +13,175 @@ env:
   REPORT_PATH: 'ci/cuke-report.json'
   CUCUMBER_SPLIT_CONFIGURATION_PATH: 'ci/cucumber-split-config.json'
   CLIENT: 'dc'
+  BUNDLE_GITHUB__COM: ${{ secrets.dchbx_deployments_token }}
 
 jobs:
-  view_linter:
+  # Common setup steps shared by multiple jobs
+  common-setup:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: ruby/setup-ruby@v1
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
           rubygems: 3.3.26
+
+      - name: Install Bundler and Dependencies
+        run: |
+          gem install bundler -v 2.2.28
+          bundle config path vendor/bundle
+          bundle install --jobs 4 --retry 3
+
+  # Job to lint views
+  view_linter:
+    needs: common-setup
+    runs-on: ubuntu-latest
+    steps:
       - name: Run View Linter
         run: |
           git fetch --no-tags --depth=1 origin trunk
           bundle exec rake view_translations_linter:lint_git_difference_changed_lines
+
+  # Job to run Brakeman security scanner
   brakeman:
+    needs: common-setup
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: ruby/setup-ruby@v1
-        with:
-          bundler-cache: true
-          rubygems: 3.3.26
-      - run: gem install brakeman
-      - run: brakeman -i config/brakeman.ignore
+      - name: Install Brakeman
+        run: gem install brakeman
+
       - name: Run Brakeman In Components
         run: |
-          for test_dir in `ls -1 components`; do
-            cd components/$test_dir
-            brakeman -i config/brakeman.ignore
-            cd ../..
+          for test_dir in components/*; do
+            (cd $test_dir && brakeman -i config/brakeman.ignore)
           done
+
+  # Job to run engine tests
   engines:
+    needs: common-setup
     runs-on: ubuntu-20.04
-    services:
-      rabbitmq:
-        image: rabbitmq:latest
-        ports:
-          - 5672:5672
-          - 15672:15672
-        options: >-
-          --name "rabbitmq"
-          --health-cmd "rabbitmqctl node_health_check"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      mongo:
-        image: mongo:4.2
-        ports:
-          - 27017:27017
-        options: >-
-          --name "mongo"
-          --health-cmd mongo
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      redis:
-        image: redis:3.2-alpine
-        ports:
-          - 6379
-        options: >-
-          --name "redis"
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
     strategy:
       fail-fast: false
       matrix:
         engine-name:
-          [
-            'benefit_markets',
-            'notifier',
-            'sponsored_benefits',
-            'transport_gateway',
-            'transport_profiles' #,
-            # 'financial_assistance',
-          ]
+          - 'benefit_markets'
+          - 'notifier'
+          - 'sponsored_benefits'
+          - 'transport_gateway'
+          - 'transport_profiles'
+          - 'financial_assistance'
     steps:
-      - uses: actions/checkout@v3
-      - uses: ruby/setup-ruby@v1
-        with:
-          rubygems: 3.3.26
-      - uses: actions/setup-node@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
         with:
           node-version: '14'
-      - name: restore Project Gems
-        uses: actions/cache@v3
+
+      - name: Restore Project Gems
+        uses: actions/cache@v2
         with:
           path: vendor/bundle
           key: v5-${{ matrix.engine-name }}-${{ hashFiles('**/Gemfile.lock') }}
           restore-keys: |
             v5-${{ matrix.engine-name }}-
-      - name: bundle install
+
+      - name: Bundle Install
         run: |
-          gem update --system --quiet --silent
           bundle config path vendor/bundle
-          bundle install
-          echo switching to ${{ matrix.engine-name }}
-          cd components/${{ matrix.engine-name }}
-          bundle config path ../../vendor/bundle
-          echo testing caching
-          echo installing ${{ matrix.engine-name }} dependencies
-          bundle install
-      - name: Restore Node Modules
-        id: npm-cache
-        uses: actions/cache@v3
+          bundle install --jobs 4 --retry 3
+          echo Switching to ${{ matrix.engine-name }}
+          (cd "components/${{ matrix.engine-name }}" && bundle install --jobs 4 --retry 3)
+
+      - name: Restore and Install Node Modules
+        uses: actions/cache@v2
         with:
           path: node_modules
           key: ${{ runner.os }}-node_modules-v14-${{ hashFiles('yarn.lock') }}
           restore-keys: |
-            ${{ runner.os }}-node_modules-v14-${{ hashFiles('yarn.lock') }}
-      - name: yarn install
-        if: steps.npm-cache.outputs.cache-hit != 'true'
-        run: |
-          yarn install
-      - name: run webpack
-        run: |
-          echo bundle config
-          bundle config path vendor/bundle
-          NODE_ENV=test RAILS_ENV=test ./bin/webpack
-      - name: test engine
-        env:
-          COVERAGE: 'true'
-        run: |
-          root=`pwd -P`
-          echo $root/components/${{ matrix.engine-name }}
-          cd $root/components/${{ matrix.engine-name }}
-          bundle config path ../../vendor/bundle
-          bundle exec rspec
-      - name: copy coverage report
-        run: |
-          root=`pwd -P`
-          cd $root/components/${{ matrix.engine-name }}
-          cp coverage/coverage.xml ${{ github.workspace }}/engines-${{ matrix.group }}_${{ strategy.job-total }}_coverage.xml
-      - name: Upload coverage artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: code-coverage
-          path: ${{ github.workspace }}/engines-${{ matrix.group }}_${{ strategy.job-total }}_coverage.xml
-  financial-assistance:
-    runs-on: ubuntu-20.04
-    services:
-      rabbitmq:
-        image: rabbitmq:latest
-        ports:
-          - 5672:5672
-          - 15672:15672
-        options: >-
-          --name "rabbitmq"
-          --health-cmd "rabbitmqctl node_health_check"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      mongo:
-        image: mongo:4.2
-        ports:
-          - 27017:27017
-        options: >-
-          --name "mongo"
-          --health-cmd mongo
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      redis:
-        image: redis:3.2-alpine
-        ports:
-          - 6379
-        options: >-
-          --name "redis"
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    strategy:
-      fail-fast: false
-      matrix:
-        group: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-    steps:
-      - uses: actions/checkout@v3
-      - uses: ruby/setup-ruby@v1
-        with:
-          bundler-cache: true
-          rubygems: 3.3.26
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '14'
-      - name: Install Test Boosters gem
-        run: gem install treye-semaphore_test_boosters --version '2.5.2'
-      - name: Restore Node Modules
-        id: npm-cache
-        uses: actions/cache@v3
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-node_modules-v14-${{ hashFiles('yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-node_modules-v14-${{ hashFiles('yarn.lock') }}
-      - name: Install node dependencies
+            ${{ runner.os }}-node_modules-v14-
+
+      - name: Install Yarn
+        run: npm install -g yarn
+
+      - name: Install Node Dependencies
         if: steps.npm-cache.outputs.cache-hit != 'true'
         run: yarn install
-      - name: Run tests
+
+      - name: Run Webpack
+        run: (cd "components/${{ matrix.engine-name }}" && NODE_ENV=test RAILS_ENV=test ./bin/webpack)
+
+      - name: Test Engine
         env:
           COVERAGE: 'true'
-          TEST_BOOSTERS_RSPEC_TEST_FILE_PATTERN: 'components/financial_assistance/**/*_spec.rb'
-        run: rspec_booster --job ${{ matrix.group }}/${{ strategy.job-total }}
-      - name: copy coverage report
+        run: (cd "components/${{ matrix.engine-name }}" && bundle exec rspec)
+
+      - name: Upload Coverage Artifact
         run: |
-          cp coverage/coverage.xml ${{ github.workspace }}/coverage/fa_${{ matrix.group }}_${{ strategy.job-total }}_coverage.xml
-      - name: Upload coverage artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: code-coverage
-          path: ${{ github.workspace }}/coverage/fa_${{ matrix.group }}_${{ strategy.job-total }}_coverage.xml
-      # - name: Install node dependencies
-      #   if: steps.npm-cache.outputs.cache-hit != 'true'
-      #   run: yarn install
-      # - name: Restore Project Gems
-      #   uses: actions/cache@v3
-      #   with:
-      #     path: vendor/bundle
-      #     key: benefit_sponsors-${{ hashFiles('**/Gemfile.lock') }}
-      #     restore-keys: |
-      #       benefit_sponsors-
-      # - name: bundle install
-      #   run: |
-      #     gem update --system --quiet --silent
-      #     bundle config path vendor/bundle
-      #     bundle install
-      #     cd components/benefit_sponsors
-      #     bundle config path ../../vendor/bundle
-      #     bundle install
-      #     gem install treye-semaphore_test_boosters --version '2.5.2'
-      # - name: Restore Node Modules
-      #   id: npm-cache
-      #   uses: actions/cache@v3
-      #   with:
-      #     path: node_modules
-      #     key: ${{ runner.os }}-node_modules-v14-${{ hashFiles('yarn.lock') }}
-      #     restore-keys: |
-      #       ${{ runner.os }}-node_modules-v14-${{ hashFiles('yarn.lock') }}
-      # - name: yarn install
-      #   if: steps.npm-cache.outputs.cache-hit != 'true'
-      #   run: yarn install
-      # - name: run webpack
-      #   run: |
-      #     bundle config path vendor/bundle
-      #     NODE_ENV=test RAILS_ENV=test ./bin/webpack
-      # - name: test engine
-      #   env:
-      #     RSPEC_SPLIT_CONFIGURATION_PATH: '${{ github.workspace }}/ci/benefit_sponsors-split-config.json'
-      #     COVERAGE: 'true'
-      #   run: |
-      #     cd components/benefit_sponsors
-      #     bundle config path ../../vendor/bundle
-      #     rspec_booster --job ${{ matrix.group }}/${{ strategy.job-total }}
+          cp "components/${{ matrix.engine-name }}/coverage/coverage.xml" "${{ github.workspace }}/engines-${{ matrix.group }}_${{ strategy.job-total }}_coverage.xml"
+          echo "::set-output name=coverage_path::engines-${{ matrix.group }}_${{ strategy.job-total }}_coverage.xml"
+
+  # Job for benefit sponsors
   benefit-sponsors:
+    needs: common-setup
     runs-on: ubuntu-20.04
-    services:
-      rabbitmq:
-        image: rabbitmq:latest
-        ports:
-          - 5672:5672
-          - 15672:15672
-        options: >-
-          --name "rabbitmq"
-          --health-cmd "rabbitmqctl node_health_check"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      mongo:
-        image: mongo:4.2
-        ports:
-          - 27017:27017
-        options: >-
-          --name "mongo"
-          --health-cmd mongo
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      redis:
-        image: redis:3.2-alpine
-        ports:
-          - 6379
-        options: >-
-          --name "redis"
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
     strategy:
       fail-fast: false
       matrix:
         group: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     steps:
-      - uses: actions/checkout@v3
-      - uses: ruby/setup-ruby@v1
-        with:
-          rubygems: 3.3.26
-      - uses: actions/setup-node@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
         with:
           node-version: '14'
+
       - name: Restore Project Gems
-        uses: actions/cache@v3
+        uses: actions/cache@v2
         with:
           path: vendor/bundle
           key: benefit_sponsors-${{ hashFiles('**/Gemfile.lock') }}
           restore-keys: |
-            benefit_sponsors-
-      - name: bundle install
+            benefit_sponsors-${{ hashFiles('**/Gemfile.lock') }}
+
+      - name: Bundle Install
         run: |
-          gem update --system --quiet --silent
           bundle config path vendor/bundle
-          bundle install
-          cd components/benefit_sponsors
-          bundle config path ../../vendor/bundle
-          bundle install
-          gem install treye-semaphore_test_boosters --version '2.5.2'
-      - name: Restore Node Modules
-        id: npm-cache
-        uses: actions/cache@v3
+          bundle install --jobs 4 --retry 3
+          (cd components/benefit_sponsors && bundle install --jobs 4 --retry 3)
+
+      - name: Restore and Install Node Modules
+        uses: actions/cache@v2
         with:
           path: node_modules
           key: ${{ runner.os }}-node_modules-v14-${{ hashFiles('yarn.lock') }}
           restore-keys: |
-            ${{ runner.os }}-node_modules-v14-${{ hashFiles('yarn.lock') }}
-      - name: yarn install
+            ${{ runner.os }}-node_modules-v14-
+
+      - name: Install Yarn
+        run: npm install -g yarn
+
+      - name: Install Node Dependencies
         if: steps.npm-cache.outputs.cache-hit != 'true'
         run: yarn install
-      - name: run webpack
-        run: |
-          bundle config path vendor/bundle
-          NODE_ENV=test RAILS_ENV=test ./bin/webpack
-      - name: test engine
+
+      - name: Run Webpack
+        run: (cd components/benefit_sponsors && NODE_ENV=test RAILS_ENV=test ./bin/webpack)
+
+      - name: Test Engine
         env:
           RSPEC_SPLIT_CONFIGURATION_PATH: '${{ github.workspace }}/ci/benefit_sponsors-split-config.json'
           COVERAGE: 'true'
+        run: (cd components/benefit_sponsors && bundle exec rspec)
+
+      - name: Upload Coverage Artifact
         run: |
-          cd components/benefit_sponsors
-          bundle config path ../../vendor/bundle
-          rspec_booster --job ${{ matrix.group }}/${{ strategy.job-total }}
-      - name: copy coverage report
-        run: |
-          cd components/benefit_sponsors
-          cp coverage/coverage.xml ${{ github.workspace }}/bs-${{ matrix.group }}_${{ strategy.job-total }}_coverage.xml
-      - name: Upload coverage artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: code-coverage
-          path: ${{ github.workspace }}/bs-${{ matrix.group }}_${{ strategy.job-total }}_coverage.xml
+          cp "components/benefit_sponsors/coverage/coverage.xml" "${{ github.workspace }}/benefit_sponsors-${{ matrix.group }}_${{ strategy.job-total }}_coverage.xml"
+          echo "::set-output name=coverage_path::benefit_sponsors-${{ matrix.group }}_${{ strategy.job-total }}_coverage.xml"
+
+    # Job for running RSpec tests
   rspec:
+    needs: common-setup
     runs-on: ubuntu-latest
     services:
       rabbitmq:
@@ -397,41 +218,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        group:
-          [
-            1,
-            2,
-            3,
-            4,
-            5,
-            6,
-            7,
-            8,
-            9,
-            10,
-            11,
-            12,
-            13,
-            14,
-            15,
-            16,
-            17,
-            18,
-            19,
-            20,
-            21,
-            22,
-            23,
-          ]
+        group: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23 ]
     steps:
-      - uses: actions/checkout@v3
-      - uses: ruby/setup-ruby@v1
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
           rubygems: 3.3.26
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '14'
       - name: Install Test Boosters gem
         run: gem install treye-semaphore_test_boosters --version '2.5.2'
       - name: Restore Node Modules
@@ -459,124 +252,50 @@ jobs:
         with:
           name: code-coverage
           path: ${{ github.workspace }}/coverage/${{ matrix.group }}_${{ strategy.job-total }}_coverage.xml
+
+  # Job for running cucumber tests
   cucumber:
+    needs: common-setup
     runs-on: ubuntu-latest
-    services:
-      rabbitmq:
-        image: rabbitmq:latest
-        ports:
-          - 5672:5672
-          - 15672:15672
-        options: >-
-          --name "rabbitmq"
-          --health-cmd "rabbitmqctl node_health_check"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      mongo:
-        image: mongo:4.2
-        ports:
-          - 27017:27017
-        options: >-
-          --name "mongo"
-          --health-cmd mongo
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      redis:
-        image: redis:3.2-alpine
-        ports:
-          - 6379
-        options: >-
-          --name "redis"
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
     strategy:
       fail-fast: false
       matrix:
-        group:
-          [
-            1,
-            2,
-            3,
-            4,
-            5,
-            6,
-            7,
-            8,
-            9,
-            10,
-            11,
-            12,
-            13,
-            14,
-            15,
-            16,
-            17,
-            18,
-            19,
-            20,
-            21,
-            22,
-            23,
-            24,
-            25,
-            26,
-            27,
-            28,
-            29,
-            30,
-            31,
-            32,
-            33,
-            34,
-            35,
-            36,
-            37,
-            38,
-            39,
-            40,
-            41,
-            42,
-            43,
-            44,
-          ]
+        group: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44 ]
     steps:
-      - uses: actions/checkout@v3
-      - uses: ruby/setup-ruby@v1
-        with:
-          bundler-cache: true
-          rubygems: 3.3.26
-      - uses: actions/setup-node@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
         with:
           node-version: '14'
-      - name: Install Test boosters gem
+
+      - name: Install Test Boosters gem
         run: gem install treye-semaphore_test_boosters --version '2.5.2'
-      - name: Restore Node Modules
-        id: npm-cache
-        uses: actions/cache@v3
+
+      - name: Restore and Install Node Modules
+        uses: actions/cache@v2
         with:
           path: node_modules
           key: ${{ runner.os }}-node_modules-v14-${{ hashFiles('yarn.lock') }}
           restore-keys: |
-            ${{ runner.os }}-node_modules-v14-${{ hashFiles('yarn.lock') }}
-      - name: Install node dependencies
+            ${{ runner.os }}-node_modules-v14-
+
+      - name: Install Yarn
+        run: npm install -g yarn
+
+      - name: Install Node Dependencies
         if: steps.npm-cache.outputs.cache-hit != 'true'
         run: yarn install
-      - name: Run tests
+
+      - name: Run Tests
         env:
           COVERAGE: 'true'
         run: cucumber_booster --job ${{ matrix.group }}/${{ strategy.job-total }}
-      - name: copy coverage report
+
+      - name: Upload Coverage Artifact
         run: |
-          cp coverage/coverage.xml ${{ github.workspace }}/coverage/cukes-${{ matrix.group }}_${{ strategy.job-total }}_coverage.xml
-      - name: Upload coverage artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: code-coverage
-          path: ${{ github.workspace }}/coverage/cukes-${{ matrix.group }}_${{ strategy.job-total }}_coverage.xml
+          cp "coverage/coverage.xml" "${{ github.workspace }}/coverage/cukes-${{ matrix.group }}_${{ strategy.job-total }}_coverage.xml"
+          echo "::set-output name=coverage_path::coverage/cukes-${{ matrix.group }}_${{ strategy.job-total }}_coverage.xml"
+
+  # Job for quality workbench
   quality-workbench:
     needs: [engines, benefit-sponsors, rspec, cucumber]
     if: always()
@@ -590,18 +309,20 @@ jobs:
           CHECK: ${{ matrix.check }}
         if: needs[env.CHECK].result != 'success'
         run: exit 1
+
+  # Job for code coverage summary
   code-coverage-summary:
     needs: [rspec, cucumber]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v2
       - name: Download code coverage artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v2
         with:
           name: code-coverage
           path: coverage
-      - name: Setup .NET Core # Required to execute ReportGenerator
-        uses: actions/setup-dotnet@v3
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v2
         with:
           dotnet-version: 6.x
           dotnet-quality: 'ga'
@@ -631,5 +352,3 @@ jobs:
         with:
           branch: coverage-artifacts
           folder: coverage-save/
-
-
