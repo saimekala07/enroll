@@ -42,7 +42,7 @@ jobs:
             vendor/bundle
           key: v1-${{ runner.os }}-${{ hashFiles('**/Gemfile.lock') }}
           restore-keys: |
-            v1-${{ runner.os }}-${{ hashFiles('**/Gemfile.lock') }}
+            v1-${{ runner.os }}-1234
 
       - name: Debug Available Caches
         run: |
@@ -52,7 +52,7 @@ jobs:
 
       - name: Debug Cache in Common Job
         run: |
-          echo "Cache key: v1-${{ runner.os }}-${{ hashFiles('**/Gemfile.lock') }}"
+          echo "Cache key: v1-${{ runner.os }}-1234"
           ls -R vendor/bundle
 
 
@@ -69,12 +69,12 @@ jobs:
       - name: Debug Information in view_linter
         run: |
           pwd
-          ls -R /home/runner/work/enroll/enroll
+          ls -R /home/runner/work/enroll/enroll/vendor/
 
       - name: Debug Available Caches
         run: |
           echo "Available caches:"
-          ls -R /home/runner/work/enroll/enroll
+          ls -R /home/runner/work/enroll/enroll/vendor/bundle
         shell: bash
 
       - name: Restore Bundler dependencies
@@ -82,7 +82,7 @@ jobs:
         with:
           path: |
             vendor/bundle
-          key: v1-${{ runner.os }}-${{ hashFiles('**/Gemfile.lock') }}
+          key: v1-${{ runner.os }}-1234
 
       - name: Cache Information
         run: |
