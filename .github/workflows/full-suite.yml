@@ -44,6 +44,11 @@ jobs:
           restore-keys: |
             v1-${{ runner.os }}-${{ hashFiles('**/Gemfile.lock') }}
 
+      - name: Debug Cache in Common Job
+        run: |
+          echo "Cache key: v1-${{ runner.os }}-${{ hashFiles('**/Gemfile.lock') }}"
+          ls -R vendor/bundle
+
 
   # Job to lint views
   view_linter:
