@@ -50,6 +50,17 @@ jobs:
     needs: common-setup
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository in view_linter
+        uses: actions/checkout@v2
+
+      - name: Set up Ruby and Bundler in view_linter
+        run: |
+          cd ${{ github.workspace }}
+          source ~/.rvm/scripts/rvm
+          bundle config path vendor/bundle
+          bundle install --jobs 4 --retry 3
+        shell: bash
+
       - name: Debug Information
         run: |
           echo "Current directory: $(pwd)"
