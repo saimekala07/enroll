@@ -66,16 +66,16 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Debug Available Caches
-        run: |
-          echo "Available caches:"
-          ls -R ${{ github.workspace }}/vendor/bundle
-        shell: bash
-
       - name: Debug Information in view_linter
         run: |
           pwd
-          ls -R
+          ls -R /home/runner/work/enroll/enroll
+
+      - name: Debug Available Caches
+        run: |
+          echo "Available caches:"
+          ls -R /home/runner/work/enroll/enroll
+        shell: bash
 
       - name: Restore Bundler dependencies
         uses: actions/cache@v2
