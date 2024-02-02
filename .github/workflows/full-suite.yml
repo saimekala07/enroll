@@ -29,6 +29,12 @@ jobs:
           bundler-cache: true
           rubygems: 3.3.26
 
+      - name: Debug Available Caches
+        run: |
+          echo "Available caches:"
+          ls -R ${{ runner.workspace }}/vendor/bundle
+        shell: bash
+
       - name: Install Bundler and Dependencies
         run: |
           gem install bundler -v 2.2.28
