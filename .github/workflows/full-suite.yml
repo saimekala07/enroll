@@ -59,8 +59,7 @@ jobs:
           path: |
             vendor/bundle
           key: v1-${{ runner.os }}-${{ hashFiles('**/Gemfile.lock') }}
-        run: |
-          echo "Bundler dependencies restored."
+        run: echo "Bundler dependencies restored."
 
       - name: Debug Information
         run: |
@@ -76,7 +75,8 @@ jobs:
           git status
           git fetch --no-tags --depth=1 origin trunk
           bundle exec rake view_translations_linter:lint_git_difference_changed_lines
-        working-directory: ${{ github.workspace }}/  # Set the working directory to the repository root
+        working-directory: ${{ github.workspace }}
+
 #
 #  # Job to run Brakeman security scanner
 #  brakeman:
