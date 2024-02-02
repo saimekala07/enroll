@@ -65,6 +65,13 @@ jobs:
           pwd
           ls -R
 
+      - name: Restore Bundler dependencies
+        uses: actions/cache@v2
+        with:
+          path: |
+            vendor/bundle
+          key: v1-${{ runner.os }}-${{ hashFiles('**/Gemfile.lock') }}
+
       - name: Cache Information
         run: |
           echo "Cache key: v1-${{ runner.os }}-${{ hashFiles('**/Gemfile.lock') }}"
@@ -74,12 +81,7 @@ jobs:
           echo "Cache key: v1-${{ runner.os }}-${{ hashFiles('**/Gemfile.lock') }}"
           ls -R vendor/bundle
 
-      - name: Restore Bundler dependencies
-        uses: actions/cache@v2
-        with:
-          path: |
-            vendor/bundle
-          key: v1-${{ runner.os }}-${{ hashFiles('**/Gemfile.lock') }}
+
 
       - name: Debug Information
         run: |
