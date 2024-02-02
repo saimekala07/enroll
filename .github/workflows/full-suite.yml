@@ -43,6 +43,9 @@ jobs:
       - name: Checkout repository in view_linter
         uses: actions/checkout@v2
 
+      - name: Set working directory to the root of the repository
+        working-directory: ${{ github.workspace }}
+
       - name: Run View Linter
         run: |
           pwd
