@@ -31,18 +31,19 @@ jobs:
 
       - name: Install Bundler and Dependencies
         run: |
-          cd ${{ github.workspace }}
           gem install bundler -v 2.2.28
           bundle config path vendor/bundle
           bundle install --jobs 4 --retry 3
         shell: bash
-      - name: Debug Information
-        run: |
-          echo "Current directory: $(pwd)"
-          echo "Ruby version: $(ruby --version)"
-          echo "Gem version: $(gem --version)"
-          echo "Bundler version: $(bundle --version)"
-        shell: bash
+
+      - name: Cache Bundler dependencies
+        uses: actions/cache@v2
+        with:
+          path: |
+            vendor/bundle
+          key: v1-${{ runner.os }}-${{ hashFiles('**/Gemfile.lock') }}
+          restore-keys: |
+            v1-${{ runner.os }}-
 
 
   # Job to lint views
@@ -53,12 +54,22 @@ jobs:
       - name: Checkout repository in view_linter
         uses: actions/checkout@v2
 
+      - name: Restore Bundler dependencies
+        uses: actions/cache@v2
+        with:
+          path: |
+            vendor/bundle
+          key: v1-${{ runner.os }}-${{ hashFiles('**/Gemfile.lock') }}
+        run: |
+          echo "Bundler dependencies restored."
+
       - name: Debug Information
         run: |
           echo "Current directory: $(pwd)"
           echo "Ruby version: $(ruby --version)"
           echo "Gem version: $(gem --version)"
           echo "Bundler version: $(bundle --version)"
+        working-directory: ${{ github.workspace }}/  # Set the working directory to the repository root
 
       - name: Set working directory and run View Linter
         run: |
@@ -67,6 +78,7 @@ jobs:
           git status
           git fetch --no-tags --depth=1 origin trunk
           bundle exec rake view_translations_linter:lint_git_difference_changed_lines
+        working-directory: ${{ github.workspace }}/  # Set the working directory to the repository root
         shell: bash
 #
 #  # Job to run Brakeman security scanner
