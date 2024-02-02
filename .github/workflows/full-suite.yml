@@ -78,8 +78,8 @@ jobs:
           git status
           git fetch --no-tags --depth=1 origin trunk
           bundle exec rake view_translations_linter:lint_git_difference_changed_lines
-        working-directory: ${{ github.workspace }}/  # Set the working directory to the repository root
         shell: bash
+        working-directory: ${{ github.workspace }}/  # Set the working directory to the repository root
 #
 #  # Job to run Brakeman security scanner
 #  brakeman:
