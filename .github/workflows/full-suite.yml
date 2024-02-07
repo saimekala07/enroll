@@ -15,7 +15,7 @@ env:
 
 jobs:
   view_linter:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v3
       - uses: ruby/setup-ruby@v1
@@ -27,7 +27,7 @@ jobs:
           git fetch --no-tags --depth=1 origin trunk
           bundle exec rake view_translations_linter:lint_git_difference_changed_lines
   brakeman:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v3
       - uses: ruby/setup-ruby@v1
@@ -44,7 +44,7 @@ jobs:
             cd ../..
           done
   engines:
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
     services:
       rabbitmq:
         image: rabbitmq:latest
@@ -152,7 +152,7 @@ jobs:
           name: code-coverage
           path: ${{ github.workspace }}/engines-${{ matrix.group }}_${{ strategy.job-total }}_coverage.xml
   financial-assistance:
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
     services:
       rabbitmq:
         image: rabbitmq:latest
@@ -267,7 +267,7 @@ jobs:
       #     bundle config path ../../vendor/bundle
       #     rspec_booster --job ${{ matrix.group }}/${{ strategy.job-total }}
   benefit-sponsors:
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
     services:
       rabbitmq:
         image: rabbitmq:latest
@@ -361,7 +361,7 @@ jobs:
           name: code-coverage
           path: ${{ github.workspace }}/bs-${{ matrix.group }}_${{ strategy.job-total }}_coverage.xml
   rspec:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     services:
       rabbitmq:
         image: rabbitmq:latest
@@ -460,7 +460,7 @@ jobs:
           name: code-coverage
           path: ${{ github.workspace }}/coverage/${{ matrix.group }}_${{ strategy.job-total }}_coverage.xml
   cucumber:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     services:
       rabbitmq:
         image: rabbitmq:latest
@@ -580,7 +580,7 @@ jobs:
   quality-workbench:
     needs: [engines, benefit-sponsors, rspec, cucumber]
     if: always()
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     strategy:
       matrix:
         check: [engines, benefit-sponsors, rspec, cucumber]
@@ -592,7 +592,7 @@ jobs:
         run: exit 1
   code-coverage-summary:
     needs: [rspec, cucumber]
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v3
       - name: Download code coverage artifact
