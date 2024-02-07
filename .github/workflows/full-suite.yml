@@ -10,14 +10,23 @@ concurrency:
 
 jobs:
   view_linter:
-    runs-on: self-hosted
+    runs-on: my-self-hosted-runner
     steps:
       - uses: actions/checkout@v3
-      - uses: ruby/setup-ruby@v1
+      - name: Install Ruby
+        run: |
+          # Add your commands to install Ruby on your self-hosted runner here
+      - name: Install Bundler
+        run: gem install bundler -v 2.2.30
+      - name: Cache Bundler dependencies
+        uses: actions/cache@v2
         with:
-          bundler-cache: true
-          rubygems: 3.3.26
+          path: vendor/bundle
+          key: ${{ runner.os }}-gem-${{ hashFiles('**/Gemfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-gem-
       - name: Run View Linter
         run: |
           git fetch --no-tags --depth=1 origin trunk
+          bundle install --path vendor/bundle
           bundle exec rake view_translations_linter:lint_git_difference_changed_lines
