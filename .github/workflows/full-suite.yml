@@ -1,5 +1,4 @@
 name: full check suite
-
 on:
   push:
   schedule:
@@ -9,36 +8,17 @@ concurrency:
   group: qb-${{ github.ref }}
   cancel-in-progress: true
 
+
 jobs:
   view_linter:
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v3
-      - name: Install rbenv and Ruby build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y git curl libssl-dev libreadline-dev zlib1g-dev
-          git clone https://github.com/rbenv/rbenv.git ~/.rbenv
-          echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.bashrc
-          echo 'eval "$(rbenv init -)"' >> ~/.bashrc
-          source ~/.bashrc
-          git clone https://github.com/rbenv/ruby-build.git ~/.rbenv/plugins/ruby-build
-      - name: Install Ruby
-        run: rbenv install 2.6.3
-      - name: Set global Ruby version
-        run: rbenv global 2.6.3
-        shell: bash
-      - name: Install Bundler
-        run: gem install bundler -v 2.2.30
-      - name: Cache Bundler dependencies
-        uses: actions/cache@v2
+      - uses: ruby/setup-ruby@v1
         with:
-          path: vendor/bundle
-          key: ${{ runner.os }}-gem-${{ hashFiles('**/Gemfile.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-gem-
+          bundler-cache: true
+          rubygems: 3.3.26
       - name: Run View Linter
         run: |
           git fetch --no-tags --depth=1 origin trunk
-          bundle install --path vendor/bundle
           bundle exec rake view_translations_linter:lint_git_difference_changed_lines
