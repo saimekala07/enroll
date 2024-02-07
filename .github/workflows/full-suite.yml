@@ -1,4 +1,5 @@
 name: full check suite
+
 on:
   push:
   schedule:
