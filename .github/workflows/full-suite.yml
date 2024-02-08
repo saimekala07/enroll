@@ -51,7 +51,7 @@ jobs:
         run: echo "::set-output name=ruby-node-cache-key::$(checksum Gemfile.lock yarn.lock)"
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: 3.3.26
+          rubygems: 3.3.26
           bundler-cache: true
       - name: Cache Ruby Gems and Node modules
         uses: actions/cache@v3
