@@ -22,7 +22,7 @@ jobs:
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.0' # Replace with your Ruby version
+          rubygems: 3.3.26
           bundler-cache: true
       - name: Set up Node.js
         uses: actions/setup-node@v3
