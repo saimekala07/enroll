@@ -48,6 +48,12 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          rubygems: 3.3.26
+          bundler-cache: false # We're using our cached gems
+
       - name: Download dependencies artifact
         uses: actions/download-artifact@v2
         with:
@@ -57,14 +63,15 @@ jobs:
       - name: Unzip dependencies
         run: unzip dependencies.zip
 
+      - name: Configure Bundler
+        run: bundle config set path vendor/bundle
+
       - name: Debugging Information
         run: |
           echo "Listing current directory:"
           ls -lah
           echo "Listing vendor/bundle directory:"
           ls -lah vendor/bundle
-          echo "Listing node_modules directory:"
-          ls -lah node_modules
           echo "Checking Ruby version:"
           ruby -v
           echo "Checking Bundler version:"
@@ -75,4 +82,4 @@ jobs:
 
       - name: Run View Linter
         run: bundle exec rake view_translations_linter:lint_git_difference_changed_lines
-  
+
