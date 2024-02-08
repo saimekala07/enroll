@@ -47,13 +47,32 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/download-artifact@v2
+
+      - name: Download dependencies artifact
+        uses: actions/download-artifact@v2
         with:
           name: dependencies
           path: .
+
       - name: Unzip dependencies
         run: unzip dependencies.zip
+
+      - name: Debugging Information
+        run: |
+          echo "Listing current directory:"
+          ls -lah
+          echo "Listing vendor/bundle directory:"
+          ls -lah vendor/bundle
+          echo "Listing node_modules directory:"
+          ls -lah node_modules
+          echo "Checking Ruby version:"
+          ruby -v
+          echo "Checking Bundler version:"
+          bundle -v
+
       - name: Fetch Trunk
         run: git fetch --no-tags --depth=1 origin trunk
+
       - name: Run View Linter
         run: bundle exec rake view_translations_linter:lint_git_difference_changed_lines
+  
