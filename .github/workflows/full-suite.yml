@@ -1,28 +1,4 @@
-#name: full check suite
-#on:
-#  push:
-#  schedule:
-#    - cron: '0 5 * * *'
-#
-#concurrency:
-#  group: qb-${{ github.ref }}
-#  cancel-in-progress: true
-#
-#
-#jobs:
-#  view_linter:
-#    runs-on: self-hosted
-#    steps:
-#      - uses: actions/checkout@v3
-#      - uses: ruby/setup-ruby@v1
-#        with:
-#          bundler-cache: true
-#          rubygems: 3.3.26
-#      - name: Run View Linter
-#        run: |
-#          git fetch --no-tags --depth=1 origin trunk
-#          bundle exec rake view_translations_linter:lint_git_difference_changed_lines
-name: full check suite
+name: Full Check Suite
 
 on:
   push:
@@ -37,50 +13,47 @@ env:
   REPORT_PATH: 'ci/cuke-report.json'
   CUCUMBER_SPLIT_CONFIGURATION_PATH: 'ci/cucumber-split-config.json'
   CLIENT: 'dc'
-  BUNDLE_GITHUB__COM: ${{ secrets.dchbx_deployments_token }}
 
 jobs:
   setup-ruby-node:
     runs-on: ubuntu-latest
-    outputs:
-      ruby-node-cache-key: ${{ steps.cache-keys.outputs.ruby-node-cache-key }}
     steps:
       - uses: actions/checkout@v3
-      - name: Generate cache key for Ruby and Node
-        id: cache-keys
-        run: echo "::set-output name=ruby-node-cache-key::$(checksum Gemfile.lock yarn.lock)"
-      - uses: ruby/setup-ruby@v1
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
         with:
-          rubygems: 3.3.26
+          ruby-version: '3.0' # Replace with your Ruby version
           bundler-cache: true
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '14'
       - name: Cache Ruby Gems and Node modules
         uses: actions/cache@v3
         with:
           path: |
             vendor/bundle
             node_modules
-          key: ${{ steps.cache-keys.outputs.ruby-node-cache-key }}
-      - name: Upload workspace
-        uses: actions/upload-artifact@v2
+          key: ruby-node-${{ hashFiles('**/Gemfile.lock', '**/yarn.lock') }}
+      - name: Zip dependencies
+        run: zip -r dependencies.zip vendor/bundle node_modules
+      - uses: actions/upload-artifact@v2
         with:
-          name: ruby-node-setup
-          path: |
-            vendor/bundle
-            node_modules
+          name: dependencies
+          path: dependencies.zip
 
   view_linter:
     needs: setup-ruby-node
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Download workspace
-        uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v2
         with:
-          name: ruby-node-setup
-      - name: Set Bundler path
-        run: bundle config path vendor/bundle
+          name: dependencies
+          path: .
+      - name: Unzip dependencies
+        run: unzip dependencies.zip
       - name: Fetch Trunk
         run: git fetch --no-tags --depth=1 origin trunk
       - name: Run View Linter
         run: bundle exec rake view_translations_linter:lint_git_difference_changed_lines
-
