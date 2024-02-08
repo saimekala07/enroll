@@ -51,11 +51,8 @@ jobs:
         run: echo "::set-output name=ruby-node-cache-key::$(checksum Gemfile.lock yarn.lock)"
       - uses: ruby/setup-ruby@v1
         with:
+          ruby-version: 3.3.26
           bundler-cache: true
-          rubygems: 3.3.26
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '14'
       - name: Cache Ruby Gems and Node modules
         uses: actions/cache@v3
         with:
@@ -63,16 +60,27 @@ jobs:
             vendor/bundle
             node_modules
           key: ${{ steps.cache-keys.outputs.ruby-node-cache-key }}
+      - name: Upload workspace
+        uses: actions/upload-artifact@v2
+        with:
+          name: ruby-node-setup
+          path: |
+            vendor/bundle
+            node_modules
 
-  # View Linter Job
   view_linter:
     needs: setup-ruby-node
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - name: Download workspace
+        uses: actions/download-artifact@v2
+        with:
+          name: ruby-node-setup
+      - name: Set Bundler path
+        run: bundle config path vendor/bundle
       - name: Fetch Trunk
         run: git fetch --no-tags --depth=1 origin trunk
       - name: Run View Linter
         run: bundle exec rake view_translations_linter:lint_git_difference_changed_lines
-        env:
-          BUNDLE_PATH: vendor/bundle
+
