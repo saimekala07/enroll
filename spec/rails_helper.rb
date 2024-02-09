@@ -1,6 +1,11 @@
 # frozen_string_literal: true
 
 # This file is copied to spec/ when you run 'rails generate rspec:install'
+require 'knapsack_pro'
+KnapsackPro::Adapters::RSpecAdapter.bind
+
+require 'webmock/rspec'
+WebMock.disable_net_connect!(allow_localhost: true, allow: ['api.knapsackpro.com'])
 
 ENV["RAILS_ENV"] ||= 'test'
 require 'spec_helper'
@@ -10,6 +15,9 @@ require 'shoulda/matchers'
 require 'webmock/rspec'
 require 'stimulus_reflex_testing/rspec'
 require "#{Rails.root}/lib/custom_linters/translations/view_translations_linter_helper.rb"
+
+# require 'test_prof/any_fixture'
+# require 'test_prof/any_fixture/dsl'
 
 WebMock.allow_net_connect!
 
@@ -85,3 +93,4 @@ RSpec.configure do |config|
   config.include Capybara::DSL
 
 end
+# at_exit { TestProf::AnyFixture.clean }

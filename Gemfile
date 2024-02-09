@@ -180,10 +180,13 @@ group :test do
   gem 'warden',                       '~> 1.2.7'
   gem 'watir',                        '~> 6.18.0'
   gem 'webdrivers', '~> 5.3.1'
-  gem 'webmock',                      '~> 3.0.1'
+  gem 'webmock',                      '~> 3.0.1',  :require => false
+  # gem 'rspec-prof'
 end
 
 group :production do
   gem 'newrelic_rpm', '~> 5.0'
   gem 'puma',         '~> 3.12.4'
 end
+
+gem "knapsack_pro", "~> 6.0", :groups => [:development, :test]
