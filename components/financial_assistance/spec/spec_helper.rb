@@ -21,6 +21,23 @@ if ENV["COVERAGE"]
   SimpleCov.start 'rails'
 end
 
+require 'knapsack_pro'
+KnapsackPro::Adapters::RSpecAdapter.bind
+
+require 'webmock/rspec'
+WebMock.disable_net_connect!(allow_localhost: true, allow: ['api.knapsackpro.com'])
+
+RSpec.configure do |config|
+  config.after(:suite) do
+    WebMock.disable_net_connect!(
+      allow_localhost: true,
+      allow: [
+        'api.knapsackpro.com',
+      ],
+      )
+  end
+end
+
 require File.expand_path("../dummy/config/environment", __FILE__)
 
 RSpec.configure do |config|
