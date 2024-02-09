@@ -85,7 +85,7 @@ jobs:
             'notifier',
             'sponsored_benefits',
             'transport_gateway',
-            'transport_profiles' 
+            'transport_profiles'
           ]
     steps:
       - uses: actions/checkout@v3
