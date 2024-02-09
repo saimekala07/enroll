@@ -2,9 +2,9 @@ name: compare suite
 on:
   push:
 
-concurrency:
-  group: qb-${{ github.ref }}
-  cancel-in-progress: true
+#concurrency:
+#  group: qb-${{ github.ref }}
+#  cancel-in-progress: true
 
 env:
   REPORT_PATH: 'ci/cuke-report.json'
