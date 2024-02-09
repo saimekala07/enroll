@@ -25,3 +25,20 @@ jobs:
           git fetch --no-tags --depth=1 origin trunk
           bundle exec rake view_translations_linter:lint_git_difference_changed_lines
 
+  compare_brakeman:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+          rubygems: 3.3.26
+      - run: brakeman -i config/brakeman.ignore
+      - name: Run Brakeman In Components
+        run: |
+          for test_dir in `ls -1 components`; do
+            cd components/$test_dir
+            brakeman -i config/brakeman.ignore
+            cd ../..
+          done
+
