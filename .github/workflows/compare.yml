@@ -33,6 +33,8 @@ jobs:
         with:
           bundler-cache: true
           rubygems: 3.3.26
+      - name: List installed gems
+        run: gem list
       - run: brakeman -i config/brakeman.ignore
       - name: Run Brakeman In Components
         run: |
