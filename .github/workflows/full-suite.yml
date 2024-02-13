@@ -16,10 +16,35 @@ jobs:
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v3
-      - uses: ruby/setup-ruby@v1
-        with:
-          bundler-cache: true
-          rubygems: 3.3.26
+
+      # Check if Ruby is installed
+      - name: Check Ruby Installation
+        id: check-ruby
+        run: |
+          RUBY_VERSION=2.6.3
+          RUBY_PATH=/opt/hostedtoolcache/Ruby/$RUBY_VERSION/arm64
+          if [ -f "$RUBY_PATH.complete" ]; then
+            echo "Ruby is already installed"
+            echo "##[set-output name=installed;]true"
+          else
+            echo "Ruby is not installed"
+            echo "##[set-output name=installed;]false"
+          fi
+
+      # Install Ruby if not installed
+      - name: Install Ruby
+        if: steps.check-ruby.outputs.installed == 'false'
+        run: |
+          RUBY_VERSION=2.6.3
+          RUBY_PATH=/opt/hostedtoolcache/Ruby/$RUBY_VERSION/arm64
+          ruby-build $RUBY_VERSION $RUBY_PATH
+          touch $RUBY_PATH.complete
+
+      # Set Ruby in the PATH
+      - name: Set Ruby PATH
+        run: echo "PATH=/opt/hostedtoolcache/Ruby/2.6.3/arm64/bin:$PATH" >> $GITHUB_ENV
+
+      # Rest of the steps
       - name: Run View Linter
         run: |
           git fetch --no-tags --depth=1 origin trunk
