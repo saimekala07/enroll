@@ -2,7 +2,6 @@ name: full check suite
 on:
   push:
 
-
 concurrency:
   group: qb-${{ github.ref }}
   cancel-in-progress: true
@@ -21,7 +20,11 @@ jobs:
         with:
           bundler-cache: true
           rubygems: 3.3.26
+      - name: Create /opt/hostedtoolcache directory
+        run: sudo mkdir -p /opt/hostedtoolcache
+      - name: Give permission to runner user to read and write
+        run: sudo chown runner /opt/hostedtoolcache && sudo chmod u+rw /opt/hostedtoolcache
       - name: Run View Linter
         run: |
-          git fetch --no-tags --depth=1 origin trunk
+          git fetch --no-tags --depth=1 origin main
           bundle exec rake view_translations_linter:lint_git_difference_changed_lines
