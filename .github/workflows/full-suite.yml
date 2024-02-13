@@ -14,16 +14,13 @@ env:
 
 jobs:
   view_linter:
-    runs-on: self-hosted
+    runs-on: ubuntu-runner
     steps:
       - uses: actions/checkout@v3
-      - uses: ruby/setup-ruby@v1.139.0
+      - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '2.6.3'
           bundler-cache: true
-          self-hosted: true
-          rubygems: '3.3.26' # Example: specific RubyGems version
-          bundler: '2.1.4'   # Example: specific Bundler version
+          rubygems: 3.3.26
       - name: Run View Linter
         run: |
           git fetch --no-tags --depth=1 origin trunk
