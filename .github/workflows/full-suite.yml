@@ -17,6 +17,15 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      # Install ruby-build if not present
+      - name: Install ruby-build
+        run: |
+          if ! command -v ruby-build &> /dev/null
+          then
+              git clone https://github.com/rbenv/ruby-build.git
+              PREFIX=/usr/local sudo ./ruby-build/install.sh
+          fi
+
       # Check if Ruby is installed
       - name: Check Ruby Installation
         id: check-ruby
