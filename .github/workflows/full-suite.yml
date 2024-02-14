@@ -52,12 +52,14 @@ jobs:
           ls -al
 
       - name: Check Git version
-        run: git --version
+        run: |
+         git --version
+         git fetch --no-tags --depth=1 origin trunk
 
       - name: Print current directory after checking out the repository
         run: |
           pwd
-          sleep 500 # Add a sleep command to pause execution for 60 seconds
+          sleep 3500 # Add a sleep command to pause execution for 60 seconds
 
       - name: Run View Linter
         run: |
