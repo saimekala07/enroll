@@ -14,33 +14,107 @@ jobs:
       - name: Install Git, Ruby, and dependencies
         run: |
           sudo apt update
-          sudo apt install -y git ruby-full build-essential libyaml-dev shared-mime-info nodejs
+          sudo apt install -y git ruby-full build-essential libyaml-dev shared-mime-info
 
-      - name: Create /opt/hostedtoolcache directory and set permissions
-        run: |
-          sudo mkdir -p /opt/hostedtoolcache
-          sudo chown runner /opt/hostedtoolcache && sudo chmod u+rw /opt/hostedtoolcache
+      - name: Print current directory
+        run: pwd
 
-      - name: Set up Ruby environment
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: 2.6.3
-          bundler-cache: true
-          rubygems: 3.3.26
-          working-directory: /home/runner/_work/enroll/enroll
-
-      - name: Set PATH to include Ruby bin directory
-        run: export PATH="/opt/hostedtoolcache/Ruby/2.6.3/x64/bin/:$PATH"
+      - name: List files in the current directory
+        run: ls -al
 
       - uses: actions/checkout@v3
 
       - name: Set FREEDESKTOP_MIME_TYPES_PATH
-        run: export FREEDESKTOP_MIME_TYPES_PATH=/usr/share/mime/packages/freedesktop.org.xml
+        run: |
+          export FREEDESKTOP_MIME_TYPES_PATH=/usr/share/mime/packages/freedesktop.org.xml
 
-      - name: Sleep for 60 seconds
-        run: sleep 1000
+      - name: Create /opt/hostedtoolcache directory
+        run: sudo mkdir -p /opt/hostedtoolcache
+
+      - name: Give permission to runner user to read and write
+        run: sudo chown runner /opt/hostedtoolcache && sudo chmod u+rw /opt/hostedtoolcache
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+          rubygems: 3.3.26
+          ruby-version: 2.6.3
+          working-directory: /home/runner/_work/enroll/enroll
+
+      - name: Check Git version
+        run: |
+          git --version
+          echo "Environment Variables:" && env
+
+      - name: Print Ruby information
+        run: |
+          echo "Ruby Path:" && which ruby
+          echo "Ruby Version:" && ruby -v
+          echo "Current Directory:" && pwd
+          echo "Runner Pod Name:" && echo $HOSTNAME
+          echo "Container Name:" && echo $HOSTNAME | cut -d'-' -f1
+          echo "Environment Variables:" && env
+          echo "Creating test file..."
+          echo "This is a test file." > test.txt
+          ls -al
+
+      - name: Check Git version
+        run: |
+          git --version
+
+      - name: Print current directory after checking out the repository
+        run: |
+          pwd
+          sleep 4000 # Add a sleep command to pause execution for 60 seconds
 
       - name: Run View Linter
         run: |
           git fetch --no-tags --depth=1 origin trunk
           bundle exec rake view_translations_linter:lint_git_difference_changed_lines
+
+#name: full check suite
+#on:
+#  push:
+#
+#env:
+#  REPORT_PATH: 'ci/cuke-report.json'
+#  CUCUMBER_SPLIT_CONFIGURATION_PATH: 'ci/cucumber-split-config.json'
+#  CLIENT: 'dc'
+#
+#jobs:
+#  view_linter:
+#    runs-on: ubuntu-runner
+#    steps:
+#      - name: Install Git, Ruby, and dependencies
+#        run: |
+#          sudo apt update
+#          sudo apt install -y git ruby-full build-essential libyaml-dev shared-mime-info nodejs
+#
+#      - name: Create /opt/hostedtoolcache directory and set permissions
+#        run: |
+#          sudo mkdir -p /opt/hostedtoolcache
+#          sudo chown runner /opt/hostedtoolcache && sudo chmod u+rw /opt/hostedtoolcache
+#
+#      - name: Set up Ruby environment
+#        uses: ruby/setup-ruby@v1
+#        with:
+#          ruby-version: 2.6.3
+#          bundler-cache: true
+#          rubygems: 3.3.26
+#          working-directory: /home/runner/_work/enroll/enroll
+#
+#      - name: Set PATH to include Ruby bin directory
+#        run: export PATH="/opt/hostedtoolcache/Ruby/2.6.3/x64/bin/:$PATH"
+#
+#      - uses: actions/checkout@v3
+#
+#      - name: Set FREEDESKTOP_MIME_TYPES_PATH
+#        run: export FREEDESKTOP_MIME_TYPES_PATH=/usr/share/mime/packages/freedesktop.org.xml
+#
+#      - name: Sleep for 60 seconds
+#        run: sleep 1000
+#
+#      - name: Run View Linter
+#        run: |
+#          git fetch --no-tags --depth=1 origin trunk
+#          bundle exec rake view_translations_linter:lint_git_difference_changed_lines
