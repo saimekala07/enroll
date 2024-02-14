@@ -16,13 +16,12 @@ jobs:
     runs-on: ubuntu-runner
     steps:
       - uses: actions/checkout@v3
-      - name: Install Git and libyaml-dev
+      - name: Install Git, Ruby, and dependencies
         run: |
           sudo apt update
-          sudo apt install -y git libyaml-dev
-      - name: Install necessary dependencies
-        run: |
-          sudo apt install -y libxml2-dev zlib1g-dev build-essential
+          sudo apt install -y git ruby-full build-essential
+      - name: Install libyaml-dev
+        run: sudo apt install -y libyaml-dev
       - name: Create /opt/hostedtoolcache directory
         run: sudo mkdir -p /opt/hostedtoolcache
       - name: Give permission to runner user to read and write
