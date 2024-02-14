@@ -80,7 +80,7 @@ jobs:
           done
 
   engines:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-runner
     services:
       rabbitmq:
         image: rabbitmq:latest
