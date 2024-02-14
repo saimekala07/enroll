@@ -20,14 +20,21 @@ jobs:
         run: |
           sudo apt update
           sudo apt install -y git libyaml-dev
+      - name: Install necessary dependencies
+        run: |
+          sudo apt install -y libxml2-dev zlib1g-dev build-essential
       - name: Create /opt/hostedtoolcache directory
         run: sudo mkdir -p /opt/hostedtoolcache
       - name: Give permission to runner user to read and write
         run: sudo chown runner /opt/hostedtoolcache && sudo chmod u+rw /opt/hostedtoolcache
+      - name: Use Bundler 2.3.24
+        run: gem install bundler -v 2.3.24
       - uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
           rubygems: 3.3.26
+      - name: Install dependencies with Bundler
+        run: bundle install --jobs 4 --retry 3
       - name: Run View Linter
         run: |
           git fetch --no-tags --depth=1 origin main
