@@ -130,7 +130,7 @@ jobs:
       - name: Install Git, Ruby, and dependencies
         run: |
           sudo apt update
-          sudo apt install -y git ruby-full build-essential libyaml-dev shared-mime-info libsodium-dev nodejs
+          sudo apt install -y git ruby-full build-essential libyaml-dev shared-mime-info libsodium-dev nodejs zlib1g-dev
 
       - uses: actions/checkout@v3
 
@@ -165,6 +165,7 @@ jobs:
       - name: bundle install
         run: |
           sleep 4000
+          export PATH="/opt/hostedtoolcache/Ruby/2.6.3/x64/bin/:$PATH"
           gem update --system --quiet --silent
           bundle config path /home/runner/_work/enroll/enroll/vendor/bundle
           bundle install
@@ -189,7 +190,7 @@ jobs:
       - name: run webpack
         run: |
           echo bundle config
-          bundle config path vendor/bundle
+          bundle config path /home/runner/_work/enroll/enroll/vendor/bundle
           NODE_ENV=test RAILS_ENV=test ./bin/webpack
       - name: test engine
         env:
@@ -198,7 +199,7 @@ jobs:
           root=`pwd -P`
           echo $root/components/${{ matrix.engine-name }}
           cd $root/components/${{ matrix.engine-name }}
-          bundle config path ../../vendor/bundle
+          bundle config path /home/runner/_work/enroll/enroll/vendor/bundle
           bundle exec rspec
       - name: copy coverage report
         run: |
