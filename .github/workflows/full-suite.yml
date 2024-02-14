@@ -11,6 +11,16 @@ jobs:
   view_linter:
     runs-on: ubuntu-runner
     steps:
+      - name: Install Git, Ruby, and dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y git ruby-full build-essential libyaml-dev shared-mime-info nodejs
+
+      - name: Create /opt/hostedtoolcache directory and set permissions
+        run: |
+          sudo mkdir -p /opt/hostedtoolcache
+          sudo chown runner /opt/hostedtoolcache && sudo chmod u+rw /opt/hostedtoolcache
+
       - name: Set up Ruby environment
         uses: ruby/setup-ruby@v1
         with:
@@ -19,27 +29,10 @@ jobs:
           rubygems: 3.3.26
           path: /opt/hostedtoolcache/Ruby/2.6.3/x64/bin/:$PATH
 
-      - name: Install Git, Ruby, and dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y git ruby-full build-essential libyaml-dev shared-mime-info nodejs
-
-      - name: Print current directory
-        run: pwd
-
-      - name: List files in the current directory
-        run: ls -al
-
       - uses: actions/checkout@v3
 
       - name: Set FREEDESKTOP_MIME_TYPES_PATH
         run: export FREEDESKTOP_MIME_TYPES_PATH=/usr/share/mime/packages/freedesktop.org.xml
-
-      - name: Create /opt/hostedtoolcache directory
-        run: sudo mkdir -p /opt/hostedtoolcache
-
-      - name: Give permission to runner user to read and write
-        run: sudo chown runner /opt/hostedtoolcache && sudo chmod u+rw /opt/hostedtoolcache
 
       - name: Check Git version
         run: |
