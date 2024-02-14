@@ -27,30 +27,15 @@ jobs:
           ruby-version: 2.6.3
           bundler-cache: true
           rubygems: 3.3.26
-          path: /opt/hostedtoolcache/Ruby/2.6.3/x64/bin/:$PATH
+
+      - name: Set PATH to include Ruby bin directory
+        run: export PATH="/opt/hostedtoolcache/Ruby/2.6.3/x64/bin/:$PATH"
 
       - uses: actions/checkout@v3
 
       - name: Set FREEDESKTOP_MIME_TYPES_PATH
         run: export FREEDESKTOP_MIME_TYPES_PATH=/usr/share/mime/packages/freedesktop.org.xml
-
-      - name: Check Git version
-        run: |
-          git --version
-          echo "Environment Variables:" && env
-
-      - name: Print Ruby information
-        run: |
-          echo "Ruby Path:" && which ruby
-          echo "Ruby Version:" && ruby -v
-          echo "Current Directory:" && pwd
-          echo "Runner Pod Name:" && echo $HOSTNAME
-          echo "Container Name:" && echo $HOSTNAME | cut -d'-' -f1
-          echo "Environment Variables:" && env
-          echo "Creating test file..."
-          echo "This is a test file." > test.txt
-          ls -al
-
+        
       - name: Run View Linter
         run: |
           git fetch --no-tags --depth=1 origin trunk
