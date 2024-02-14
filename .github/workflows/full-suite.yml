@@ -38,6 +38,14 @@ jobs:
         with:
           bundler-cache: true
           rubygems: 3.3.26
+          ruby-version: 2.6.3
+          install-dir: /home/runner/_work/enroll/enroll
+
+      - name: Print Ruby version
+        run: ruby -v
+
+      - name: Check Git version
+        run: git --version
 
       - name: Print current directory after checking out the repository
         run: |

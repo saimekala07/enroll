@@ -1,9 +1,6 @@
-name: full check suite
+name: compare suit
 on:
   push:
-
-
-
 
 env:
   REPORT_PATH: 'ci/cuke-report.json'
