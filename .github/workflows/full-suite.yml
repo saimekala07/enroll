@@ -47,6 +47,8 @@ jobs:
           echo "Ruby Version:" && ruby -v
           echo "Current Directory:" && pwd
           echo "Runner Pod Name:" && echo $HOSTNAME
+          echo "Container Name:" && echo $HOSTNAME | cut -d'-' -f1
+          echo "Environment Variables:" && env
           echo "Creating test file..."
           echo "This is a test file." > test.txt
           ls -al
@@ -54,8 +56,7 @@ jobs:
       - name: Check Git version
         run: |
          git --version
-         git fetch --no-tags --depth=1 origin trunk
-
+          
       - name: Print current directory after checking out the repository
         run: |
           pwd
