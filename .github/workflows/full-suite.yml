@@ -35,7 +35,10 @@ jobs:
 
       - name: Set FREEDESKTOP_MIME_TYPES_PATH
         run: export FREEDESKTOP_MIME_TYPES_PATH=/usr/share/mime/packages/freedesktop.org.xml
-        
+
+      - name: Sleep for 60 seconds
+        run: sleep 1000
+
       - name: Run View Linter
         run: |
           git fetch --no-tags --depth=1 origin trunk
