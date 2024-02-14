@@ -27,6 +27,7 @@ jobs:
           ruby-version: 2.6.3
           bundler-cache: true
           rubygems: 3.3.26
+          working-directory: /home/runner/_work/enroll/enroll
 
       - name: Set PATH to include Ruby bin directory
         run: export PATH="/opt/hostedtoolcache/Ruby/2.6.3/x64/bin/:$PATH"
