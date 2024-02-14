@@ -26,8 +26,8 @@ jobs:
         run: sudo mkdir -p /opt/hostedtoolcache
       - name: Give permission to runner user to read and write
         run: sudo chown runner /opt/hostedtoolcache && sudo chmod u+rw /opt/hostedtoolcache
-      - name: Use Bundler 2.3.24
-        run: gem install bundler -v 2.3.24
+#      - name: Use Bundler 2.3.24
+#        run: gem install bundler -v 2.3.24
       - uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
