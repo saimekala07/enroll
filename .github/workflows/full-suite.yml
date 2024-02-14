@@ -19,7 +19,7 @@ jobs:
       - name: Install Git, Ruby, and dependencies
         run: |
           sudo apt update
-          sudo apt install -y git ruby-full build-essential libyaml-dev
+          sudo apt install -y git ruby-full build-essential libyaml-dev shared-mime-info
       - name: Set FREEDESKTOP_MIME_TYPES_PATH
         run: |
           export FREEDESKTOP_MIME_TYPES_PATH=/usr/share/mime/packages/freedesktop.org.xml
@@ -31,13 +31,13 @@ jobs:
         with:
           bundler-cache: true
           rubygems: 3.3.26
-      - name: Install Bundler 2.3.24
-        run: |
-          sudo gem install bundler -v 2.3.24
-      - name: Install Gems
-        run: |
-          bundle config set path 'vendor/bundle'
-          bundle install --jobs 4 --retry 3
+#      - name: Install Bundler 2.3.24
+#        run: |
+#          sudo gem install bundler -v 2.3.24
+#      - name: Install Gems
+#        run: |
+#          bundle config set path 'vendor/bundle'
+#          bundle install --jobs 4 --retry 3
       - name: Run View Linter
         run: |
           git fetch --no-tags --depth=1 origin main
