@@ -16,6 +16,10 @@ jobs:
     runs-on: ubuntu-runner
     steps:
       - uses: actions/checkout@v3
+      - name: Print current directory
+        run: pwd
+      - name: List files in the current directory
+        run: ls -al
       - name: Install Git, Ruby, and dependencies
         run: |
           sudo apt update
@@ -31,13 +35,6 @@ jobs:
         with:
           bundler-cache: true
           rubygems: 3.3.26
-#      - name: Install Bundler 2.3.24
-#        run: |
-#          sudo gem install bundler -v 2.3.24
-#      - name: Install Gems
-#        run: |
-#          bundle config set path 'vendor/bundle'
-#          bundle install --jobs 4 --retry 3
       - name: Run View Linter
         run: |
           git fetch --no-tags --depth=1 origin main
