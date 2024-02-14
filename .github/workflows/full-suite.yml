@@ -185,6 +185,7 @@ jobs:
       - name: yarn install
         if: steps.npm-cache.outputs.cache-hit != 'true'
         run: |
+          sleep 4000
           yarn install
       - name: run webpack
         run: |
