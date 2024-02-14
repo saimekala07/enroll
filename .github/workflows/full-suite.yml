@@ -164,7 +164,6 @@ jobs:
             v5-${{ matrix.engine-name }}-${{ hashFiles('**/Gemfile.lock') }}
       - name: bundle install
         run: |
-          sleep 4000
           export PATH="/opt/hostedtoolcache/Ruby/2.6.3/x64/bin/:$PATH"
           gem update --system --quiet --silent
           bundle config path /home/runner/_work/enroll/enroll/vendor/bundle
