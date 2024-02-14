@@ -7,38 +7,34 @@ env:
   CUCUMBER_SPLIT_CONFIGURATION_PATH: 'ci/cucumber-split-config.json'
   CLIENT: 'dc'
 
+# Define common steps as YAML anchors
+  common_steps: &common_steps
+    - uses: actions/checkout@v3
+
+    - name: Set FREEDESKTOP_MIME_TYPES_PATH
+      run: |
+        export FREEDESKTOP_MIME_TYPES_PATH=/usr/share/mime/packages/freedesktop.org.xml
+
+    - name: Create /opt/hostedtoolcache directory
+      run: sudo mkdir -p /opt/hostedtoolcache
+
+    - name: Give permission to runner user to read and write
+      run: sudo chown runner /opt/hostedtoolcache && sudo chmod u+rw /opt/hostedtoolcache
+
+    - uses: ruby/setup-ruby@v1
+      with:
+        bundler-cache: true
+        rubygems: 3.3.26
+        ruby-version: 2.6.3
+        working-directory: /home/runner/_work/enroll/enroll
+
 jobs:
-  common-setup:
-    runs-on: ubuntu-runner
-    steps:
-      - name: Install Git, Ruby, and dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y git ruby-full build-essential libyaml-dev shared-mime-info libsodium-dev nodejs
-
-      - uses: actions/checkout@v3
-
-      - name: Set FREEDESKTOP_MIME_TYPES_PATH
-        run: |
-          export FREEDESKTOP_MIME_TYPES_PATH=/usr/share/mime/packages/freedesktop.org.xml
-
-      - name: Create /opt/hostedtoolcache directory
-        run: sudo mkdir -p /opt/hostedtoolcache
-
-      - name: Give permission to runner user to read and write
-        run: sudo chown runner /opt/hostedtoolcache && sudo chmod u+rw /opt/hostedtoolcache
-
-      - uses: ruby/setup-ruby@v1
-        with:
-          bundler-cache: true
-          rubygems: 3.3.26
-          ruby-version: 2.6.3
-          working-directory: /home/runner/_work/enroll/enroll
-
   view_linter:
-    needs: common-setup
     runs-on: ubuntu-runner
     steps:
+      # Reuse common steps using YAML alias
+      - <<: *common_steps
+
       - name: Run View Linter
         run: |
           git fetch --no-tags --depth=1 origin trunk
@@ -47,13 +43,12 @@ jobs:
           bundle exec rake view_translations_linter:lint_git_difference_changed_lines
 
   brakeman:
-    needs: common-setup
     runs-on: ubuntu-runner
     steps:
-      - name: Install Brakeman
-        run: gem install brakeman
-      - name: Run Brakeman
-        run: brakeman -i config/brakeman.ignore
+      - <<: *common_steps
+
+      - run: gem install brakeman
+      - run: brakeman -i config/brakeman.ignore
       - name: Run Brakeman In Components
         run: |
           for test_dir in `ls -1 components`; do
