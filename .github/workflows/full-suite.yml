@@ -21,7 +21,8 @@ jobs:
           bundler-cache: true
           rubygems: 3.3.26
           ruby-version: 2.6.3
-#          working-directory: /home/runner/_work/enroll/enroll
+
+#working-directory: /home/runner/_work/enroll/enroll
 
       - name: Run View Linter
         run: |
@@ -39,7 +40,8 @@ jobs:
           bundler-cache: true
           rubygems: 3.3.26
           ruby-version: 2.6.3
-#          working-directory: /home/runner/_work/enroll/enroll
+
+# working-directory: /home/runner/_work/enroll/enroll
 
       - run: gem install brakeman
       - run: brakeman -i config/brakeman.ignore
