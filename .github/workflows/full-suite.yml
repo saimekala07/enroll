@@ -1,168 +1,52 @@
-name: runner full check suite
-on:
-  push:
-
-concurrency:
-  group: qb-${{ github.ref }}
-  cancel-in-progress: true
-
-env:
-  REPORT_PATH: 'ci/cuke-report.json'
-  CUCUMBER_SPLIT_CONFIGURATION_PATH: 'ci/cucumber-split-config.json'
-  CLIENT: 'dc'
-
-jobs:
-  view_linter:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: ruby/setup-ruby@v1
-        with:
-          bundler-cache: true
-          rubygems: 3.3.26
-          ruby-version: 2.6.3
-      - name: Run View Linter
-        run: |
-          git fetch --no-tags --depth=1 origin trunk
-          echo $PATH
-          bundle exec rake view_translations_linter:lint_git_difference_changed_lines
-
-  brakeman:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: ruby/setup-ruby@v1
-        with:
-          bundler-cache: true
-          rubygems: 3.3.26
-          ruby-version: 2.6.3
-      - run: gem install brakeman
-      - run: brakeman -i config/brakeman.ignore
-      - name: Run Brakeman In Components
-        run: |
-          for test_dir in `ls -1 components`; do
-            cd components/$test_dir
-            brakeman -i config/brakeman.ignore
-            cd ../..
-          done
-
-  engines:
-    runs-on: ubuntu-runner
-    services:
-      rabbitmq:
-        image: rabbitmq:latest
-        ports:
-          - 5672:5672
-          - 15672:15672
-        options: >-
-          --name "rabbitmq"
-          --health-cmd "rabbitmqctl node_health_check"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      mongo:
-        image: mongo:4.2
-        ports:
-          - 27017:27017
-        options: >-
-          --name "mongo"
-          --health-cmd mongo
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      redis:
-        image: redis:3.2-alpine
-        ports:
-          - 6379
-        options: >-
-          --name "redis"
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    strategy:
-      fail-fast: false
-      matrix:
-        engine-name:
-          [
-            'benefit_markets',
-            'notifier',
-            'sponsored_benefits',
-            'transport_gateway',
-          'transport_profiles' #,
-            # 'financial_assistance',
-          ]
-
-    steps:
-      - uses: actions/checkout@v3
-      - uses: ruby/setup-ruby@v1
-        with:
-          bundler-cache: true
-          rubygems: 3.3.26
-          ruby-version: 2.6.3
-          working-directory: /home/runner/_work/enroll/enroll
-
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '14'
-
-      - name: restore Project Gems
-        uses: actions/cache@v3
-        with:
-          path: /home/runner/_work/enroll/enroll/vendor/bundle
-          key: v5-${{ matrix.engine-name }}-${{ hashFiles('**/Gemfile.lock') }}
-          restore-keys: |
-            v5-${{ matrix.engine-name }}-${{ hashFiles('**/Gemfile.lock') }}
-      - name: bundle install
-        run: |
-          export PATH="/opt/hostedtoolcache/Ruby/2.6.3/x64/bin/:$PATH"
-          gem update --system --quiet --silent
-          bundle config path /home/runner/_work/enroll/enroll/vendor/bundle
-          bundle install
-          echo switching to ${{ matrix.engine-name }}
-          cd components/${{ matrix.engine-name }}
-          bundle config path /home/runner/_work/enroll/enroll/vendor/bundle
-          echo testing caching
-          echo installing ${{ matrix.engine-name }} dependencies
-          bundle install
-      - name: Restore Node Modules
-        id: npm-cache
-        uses: actions/cache@v3
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-node_modules-v14-${{ hashFiles('yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-node_modules-v14-${{ hashFiles('yarn.lock') }}
-      - name: yarn install
-        if: steps.npm-cache.outputs.cache-hit != 'true'
-        run: |
-          yarn install
-      - name: run webpack
-        run: |
-          echo bundle config
-          bundle config path /home/runner/_work/enroll/enroll/vendor/bundle
-          NODE_ENV=test RAILS_ENV=test ./bin/webpack
-      - name: test engine
-        env:
-          COVERAGE: 'true'
-        run: |
-          root=`pwd -P`
-          echo $root/components/${{ matrix.engine-name }}
-          cd $root/components/${{ matrix.engine-name }}
-          export PATH="/opt/hostedtoolcache/Ruby/2.6.3/x64/bin/:$PATH"
-          bundle config path /home/runner/_work/enroll/enroll/vendor/bundle
-          bundle exec rspec
-      - name: copy coverage report
-        run: |
-          root=`pwd -P`
-          cd $root/components/${{ matrix.engine-name }}
-          cp coverage/coverage.xml ${{ github.workspace }}/engines-${{ matrix.group }}_${{ strategy.job-total }}_coverage.xml
-      - name: Upload coverage artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: code-coverage
-          path: ${{ github.workspace }}/engines-${{ matrix.group }}_${{ strategy.job-total }}_coverage.xml
-#  financial-assistance:
+#name: runner full check suite
+#on:
+#  push:
+#
+#concurrency:
+#  group: qb-${{ github.ref }}
+#  cancel-in-progress: true
+#
+#env:
+#  REPORT_PATH: 'ci/cuke-report.json'
+#  CUCUMBER_SPLIT_CONFIGURATION_PATH: 'ci/cucumber-split-config.json'
+#  CLIENT: 'dc'
+#
+#jobs:
+#  view_linter:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v3
+#      - uses: ruby/setup-ruby@v1
+#        with:
+#          bundler-cache: true
+#          rubygems: 3.3.26
+#          ruby-version: 2.6.3
+#      - name: Run View Linter
+#        run: |
+#          git fetch --no-tags --depth=1 origin trunk
+#          echo $PATH
+#          bundle exec rake view_translations_linter:lint_git_difference_changed_lines
+#
+#  brakeman:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v3
+#      - uses: ruby/setup-ruby@v1
+#        with:
+#          bundler-cache: true
+#          rubygems: 3.3.26
+#          ruby-version: 2.6.3
+#      - run: gem install brakeman
+#      - run: brakeman -i config/brakeman.ignore
+#      - name: Run Brakeman In Components
+#        run: |
+#          for test_dir in `ls -1 components`; do
+#            cd components/$test_dir
+#            brakeman -i config/brakeman.ignore
+#            cd ../..
+#          done
+#
+#  engines:
 #    runs-on: ubuntu-runner
 #    services:
 #      rabbitmq:
@@ -199,27 +83,18 @@ jobs:
 #    strategy:
 #      fail-fast: false
 #      matrix:
-#        group: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+#        engine-name:
+#          [
+#            'benefit_markets',
+#            'notifier',
+#            'sponsored_benefits',
+#            'transport_gateway',
+#          'transport_profiles' #,
+#            # 'financial_assistance',
+#          ]
+#
 #    steps:
-#      - name: Install Git, Ruby, and dependencies
-#        run: |
-#          sudo apt update
-#          sudo apt install -y git ruby-full build-essential libyaml-dev shared-mime-info libsodium-dev nodejs zlib1g-dev
-#          sudo apt install -y npm && sudo npm install -g yarn
-#          sudo apt install -y tzdata
-#
 #      - uses: actions/checkout@v3
-#
-#      - name: Set FREEDESKTOP_MIME_TYPES_PATH
-#        run: |
-#          export FREEDESKTOP_MIME_TYPES_PATH=/usr/share/mime/packages/freedesktop.org.xml
-#
-#      - name: Create /opt/hostedtoolcache directory
-#        run: sudo mkdir -p /opt/hostedtoolcache
-#
-#      - name: Give permission to runner user to read and write
-#        run: sudo chown runner /opt/hostedtoolcache && sudo chmod u+rw /opt/hostedtoolcache
-#
 #      - uses: ruby/setup-ruby@v1
 #        with:
 #          bundler-cache: true
@@ -231,9 +106,25 @@ jobs:
 #        with:
 #          node-version: '14'
 #
-#      - name: Install Test Boosters gem
-#        run: gem install treye-semaphore_test_boosters --version '2.5.2'
-#
+#      - name: restore Project Gems
+#        uses: actions/cache@v3
+#        with:
+#          path: /home/runner/_work/enroll/enroll/vendor/bundle
+#          key: v5-${{ matrix.engine-name }}-${{ hashFiles('**/Gemfile.lock') }}
+#          restore-keys: |
+#            v5-${{ matrix.engine-name }}-${{ hashFiles('**/Gemfile.lock') }}
+#      - name: bundle install
+#        run: |
+#          export PATH="/opt/hostedtoolcache/Ruby/2.6.3/x64/bin/:$PATH"
+#          gem update --system --quiet --silent
+#          bundle config path /home/runner/_work/enroll/enroll/vendor/bundle
+#          bundle install
+#          echo switching to ${{ matrix.engine-name }}
+#          cd components/${{ matrix.engine-name }}
+#          bundle config path /home/runner/_work/enroll/enroll/vendor/bundle
+#          echo testing caching
+#          echo installing ${{ matrix.engine-name }} dependencies
+#          bundle install
 #      - name: Restore Node Modules
 #        id: npm-cache
 #        uses: actions/cache@v3
@@ -242,27 +133,136 @@ jobs:
 #          key: ${{ runner.os }}-node_modules-v14-${{ hashFiles('yarn.lock') }}
 #          restore-keys: |
 #            ${{ runner.os }}-node_modules-v14-${{ hashFiles('yarn.lock') }}
-#      - name: Install node dependencies
+#      - name: yarn install
 #        if: steps.npm-cache.outputs.cache-hit != 'true'
-#        run: yarn install
-#      - name: Run tests
+#        run: |
+#          yarn install
+#      - name: run webpack
+#        run: |
+#          echo bundle config
+#          bundle config path /home/runner/_work/enroll/enroll/vendor/bundle
+#          NODE_ENV=test RAILS_ENV=test ./bin/webpack
+#      - name: test engine
 #        env:
 #          COVERAGE: 'true'
-#          TEST_BOOSTERS_RSPEC_TEST_FILE_PATTERN: 'components/financial_assistance/**/*_spec.rb'
-#        run: rspec_booster --job ${{ matrix.group }}/${{ strategy.job-total }}
+#        run: |
+#          root=`pwd -P`
+#          echo $root/components/${{ matrix.engine-name }}
+#          cd $root/components/${{ matrix.engine-name }}
+#          export PATH="/opt/hostedtoolcache/Ruby/2.6.3/x64/bin/:$PATH"
+#          bundle config path /home/runner/_work/enroll/enroll/vendor/bundle
+#          bundle exec rspec
 #      - name: copy coverage report
 #        run: |
-#          cp coverage/coverage.xml ${{ github.workspace }}/coverage/fa_${{ matrix.group }}_${{ strategy.job-total }}_coverage.xml
+#          root=`pwd -P`
+#          cd $root/components/${{ matrix.engine-name }}
+#          cp coverage/coverage.xml ${{ github.workspace }}/engines-${{ matrix.group }}_${{ strategy.job-total }}_coverage.xml
 #      - name: Upload coverage artifact
 #        uses: actions/upload-artifact@v2
 #        with:
 #          name: code-coverage
-#          path: ${{ github.workspace }}/coverage/fa_${{ matrix.group }}_${{ strategy.job-total }}_coverage.xml
-
-#steps:
-#      - name: Login to Docker Hub
-#        uses: docker/login-action@v2
-#        with:
-#          registry: https://index.docker.io/v1/
-#          username: ${{ secrets.DOCKER_USERNAME }}
-#          password: ${{ secrets.DOCKER_ACCESS_TOKEN }}
+#          path: ${{ github.workspace }}/engines-${{ matrix.group }}_${{ strategy.job-total }}_coverage.xml
+##  financial-assistance:
+##    runs-on: ubuntu-runner
+##    services:
+##      rabbitmq:
+##        image: rabbitmq:latest
+##        ports:
+##          - 5672:5672
+##          - 15672:15672
+##        options: >-
+##          --name "rabbitmq"
+##          --health-cmd "rabbitmqctl node_health_check"
+##          --health-interval 10s
+##          --health-timeout 5s
+##          --health-retries 5
+##      mongo:
+##        image: mongo:4.2
+##        ports:
+##          - 27017:27017
+##        options: >-
+##          --name "mongo"
+##          --health-cmd mongo
+##          --health-interval 10s
+##          --health-timeout 5s
+##          --health-retries 5
+##      redis:
+##        image: redis:3.2-alpine
+##        ports:
+##          - 6379
+##        options: >-
+##          --name "redis"
+##          --health-cmd "redis-cli ping"
+##          --health-interval 10s
+##          --health-timeout 5s
+##          --health-retries 5
+##    strategy:
+##      fail-fast: false
+##      matrix:
+##        group: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+##    steps:
+##      - name: Install Git, Ruby, and dependencies
+##        run: |
+##          sudo apt update
+##          sudo apt install -y git ruby-full build-essential libyaml-dev shared-mime-info libsodium-dev nodejs zlib1g-dev
+##          sudo apt install -y npm && sudo npm install -g yarn
+##          sudo apt install -y tzdata
+##
+##      - uses: actions/checkout@v3
+##
+##      - name: Set FREEDESKTOP_MIME_TYPES_PATH
+##        run: |
+##          export FREEDESKTOP_MIME_TYPES_PATH=/usr/share/mime/packages/freedesktop.org.xml
+##
+##      - name: Create /opt/hostedtoolcache directory
+##        run: sudo mkdir -p /opt/hostedtoolcache
+##
+##      - name: Give permission to runner user to read and write
+##        run: sudo chown runner /opt/hostedtoolcache && sudo chmod u+rw /opt/hostedtoolcache
+##
+##      - uses: ruby/setup-ruby@v1
+##        with:
+##          bundler-cache: true
+##          rubygems: 3.3.26
+##          ruby-version: 2.6.3
+##          working-directory: /home/runner/_work/enroll/enroll
+##
+##      - uses: actions/setup-node@v3
+##        with:
+##          node-version: '14'
+##
+##      - name: Install Test Boosters gem
+##        run: gem install treye-semaphore_test_boosters --version '2.5.2'
+##
+##      - name: Restore Node Modules
+##        id: npm-cache
+##        uses: actions/cache@v3
+##        with:
+##          path: node_modules
+##          key: ${{ runner.os }}-node_modules-v14-${{ hashFiles('yarn.lock') }}
+##          restore-keys: |
+##            ${{ runner.os }}-node_modules-v14-${{ hashFiles('yarn.lock') }}
+##      - name: Install node dependencies
+##        if: steps.npm-cache.outputs.cache-hit != 'true'
+##        run: yarn install
+##      - name: Run tests
+##        env:
+##          COVERAGE: 'true'
+##          TEST_BOOSTERS_RSPEC_TEST_FILE_PATTERN: 'components/financial_assistance/**/*_spec.rb'
+##        run: rspec_booster --job ${{ matrix.group }}/${{ strategy.job-total }}
+##      - name: copy coverage report
+##        run: |
+##          cp coverage/coverage.xml ${{ github.workspace }}/coverage/fa_${{ matrix.group }}_${{ strategy.job-total }}_coverage.xml
+##      - name: Upload coverage artifact
+##        uses: actions/upload-artifact@v2
+##        with:
+##          name: code-coverage
+##          path: ${{ github.workspace }}/coverage/fa_${{ matrix.group }}_${{ strategy.job-total }}_coverage.xml
+#
+##steps:
+##      - name: Login to Docker Hub
+##        uses: docker/login-action@v2
+##        with:
+##          registry: https://index.docker.io/v1/
+##          username: ${{ secrets.DOCKER_USERNAME }}
+##          password: ${{ secrets.DOCKER_ACCESS_TOKEN }}
