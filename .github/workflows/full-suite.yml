@@ -21,13 +21,9 @@ jobs:
           bundler-cache: true
           rubygems: 3.3.26
           ruby-version: 2.6.3
-
-#working-directory: /home/runner/_work/enroll/enroll
-
       - name: Run View Linter
         run: |
           git fetch --no-tags --depth=1 origin trunk
-#          export PATH="/opt/hostedtoolcache/Ruby/2.6.3/x64/bin/:$PATH"
           echo $PATH
           bundle exec rake view_translations_linter:lint_git_difference_changed_lines
 
@@ -40,9 +36,6 @@ jobs:
           bundler-cache: true
           rubygems: 3.3.26
           ruby-version: 2.6.3
-
-# working-directory: /home/runner/_work/enroll/enroll
-
       - run: gem install brakeman
       - run: brakeman -i config/brakeman.ignore
       - name: Run Brakeman In Components
