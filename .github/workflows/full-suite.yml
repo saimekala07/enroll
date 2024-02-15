@@ -130,7 +130,9 @@ jobs:
       - name: Install Git, Ruby, and dependencies
         run: |
           sudo apt update
-          sudo apt install -y git ruby-full build-essential libyaml-dev shared-mime-info libsodium-dev nodejs zlib1g-dev yarn
+          sudo apt install -y git ruby-full build-essential libyaml-dev shared-mime-info libsodium-dev nodejs zlib1g-dev
+          sudo apt install npm
+          sudo npm install -g yarn
 
       - uses: actions/checkout@v3
 
@@ -185,7 +187,6 @@ jobs:
       - name: yarn install
         if: steps.npm-cache.outputs.cache-hit != 'true'
         run: |
-          sleep 4000
           yarn install
       - name: run webpack
         run: |
@@ -200,6 +201,8 @@ jobs:
           echo $root/components/${{ matrix.engine-name }}
           cd $root/components/${{ matrix.engine-name }}
           bundle config path /home/runner/_work/enroll/enroll/vendor/bundle
+          sleep 4000
+          apt install tzdata
           bundle exec rspec
       - name: copy coverage report
         run: |
