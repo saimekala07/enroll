@@ -131,8 +131,7 @@ jobs:
         run: |
           sudo apt update
           sudo apt install -y git ruby-full build-essential libyaml-dev shared-mime-info libsodium-dev nodejs zlib1g-dev
-          sudo apt install npm
-          sudo npm install -g yarn
+          sudo apt install -y npm && sudo npm install -g yarn
 
       - uses: actions/checkout@v3
 
