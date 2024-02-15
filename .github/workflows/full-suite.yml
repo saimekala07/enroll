@@ -132,6 +132,7 @@ jobs:
           sudo apt update
           sudo apt install -y git ruby-full build-essential libyaml-dev shared-mime-info libsodium-dev nodejs zlib1g-dev
           sudo apt install -y npm && sudo npm install -g yarn
+          sudo apt install -y tzdata
 
       - uses: actions/checkout@v3
 
@@ -199,9 +200,9 @@ jobs:
           root=`pwd -P`
           echo $root/components/${{ matrix.engine-name }}
           cd $root/components/${{ matrix.engine-name }}
+          export PATH="/opt/hostedtoolcache/Ruby/2.6.3/x64/bin/:$PATH"
           bundle config path /home/runner/_work/enroll/enroll/vendor/bundle
           sleep 4000
-          apt install tzdata
           bundle exec rspec
       - name: copy coverage report
         run: |
