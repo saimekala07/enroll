@@ -119,10 +119,10 @@ jobs:
         engine-name:
           [
             'benefit_markets',
-           # 'notifier',
-           # 'sponsored_benefits',
-            #'transport_gateway',
-          #'transport_profiles' #,
+            'notifier',
+            'sponsored_benefits',
+            'transport_gateway',
+          'transport_profiles' #,
             # 'financial_assistance',
           ]
 
@@ -202,7 +202,6 @@ jobs:
           cd $root/components/${{ matrix.engine-name }}
           export PATH="/opt/hostedtoolcache/Ruby/2.6.3/x64/bin/:$PATH"
           bundle config path /home/runner/_work/enroll/enroll/vendor/bundle
-          sleep 4000
           bundle exec rspec
       - name: copy coverage report
         run: |
