@@ -21,3 +21,14 @@ jobs:
           git config diff.renameLimit 800
           git fetch --no-tags --depth=1 origin trunk
           bundle exec rubocop-git origin/trunk | grep "no offenses detected"
+
+  check-ticket-number:
+    runs-on: ubuntu-latest
+    steps:
+      - name: redmine ticket check
+        uses: neofinancial/ticket-check-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ticketLink: 'https://redmine.priv.dchbx.org/issues/%ticketNumber%'
+          bodyRegex: 'RM-\d+'
+          bodyURLRegex: 'http(s?):\/\/redmine\.priv\.dchbx\.org\/issues\/\d+'
