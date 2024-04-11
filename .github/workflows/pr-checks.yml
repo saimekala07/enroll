@@ -28,7 +28,7 @@ jobs:
       - name: Check for Ticket Link
         run: |
           if echo "${{ github.event.pull_request.body }}" | grep -E '(RM-[0-9]+|https:\/\/redmine\.priv\.dchbx\.org\/issues\/[0-9]+)'; then
-            echo "Ticket link found."
+            echo "Ticket link found"
           else
             echo "No ticket link found. Please include a ticket link in the PR description." >&2
             exit 1
