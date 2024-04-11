@@ -30,5 +30,4 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           ticketLink: 'https://redmine.priv.dchbx.org/issues/%ticketNumber%'
-          bodyRegex: 'RM-\d+'
           bodyURLRegex: 'http(s?):\/\/redmine\.priv\.dchbx\.org\/issues\/\d+'
