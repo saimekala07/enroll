@@ -22,11 +22,16 @@ jobs:
           git fetch --no-tags --depth=1 origin trunk
           bundle exec rubocop-git origin/trunk | grep "no offenses detected"
 
-  check-ticket-number:
+  check-ticket-link:
     runs-on: ubuntu-latest
     steps:
-      - name: redmine ticket check
-        uses: neofinancial/ticket-check-action@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          bodyURLRegex: 'https:\/\/redmine\.priv\.dchbx\.org\/issues\/\d+'
+      - name: Check for Ticket Link
+        run: |
+          echo "PR Body: ${{ github.event.pull_request.body }}"
+          if echo "${{ github.event.pull_request.body }}" | grep -E '(RM-[0-9]+|https:\/\/redmine\.priv\.dchbx\.org\/issues\/[0-9]+)'; then
+            echo "Ticket link found."
+          else
+            echo "No ticket link found. Please include a ticket link in the PR description." >&2
+            exit 1
+          fi
+
