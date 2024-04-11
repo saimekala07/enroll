@@ -29,4 +29,4 @@ jobs:
         uses: neofinancial/ticket-check-action@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          bodyURLRegex: 'http(s?):\/\/redmine\.priv\.dchbx\.org\/issues\/\d+'
+          bodyURLRegex: 'https:\/\/redmine\.priv\.dchbx\.org\/issues\/\d+'
